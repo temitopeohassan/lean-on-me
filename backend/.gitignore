@@ -10,6 +10,7 @@
 # production
 /build
 /mcp
+/.cursor
 
 # debug
 npm-debug.log*
