@@ -6,13 +6,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // ✅ Force Webpack
-  experimental: {
-    turbo: {
-      rules: {},
-    },
-  },
-  webpack: (config) => config,
+  turbopack: {},
 };
 
 export default nextConfig;
