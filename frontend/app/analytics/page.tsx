@@ -1,22 +1,8 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts"
 import { TrendingUp, Users, DollarSign, Activity } from "lucide-react"
 
 const lineChartData = [
@@ -54,6 +40,63 @@ const userMetrics = [
 ]
 
 export default function AnalyticsPage() {
+  const [mounted, setMounted] = useState(false)
+  const [Charts, setCharts] = useState<any>(null)
+
+  useEffect(() => {
+    setMounted(true)
+    // Load charts module on client side only
+    import("@/components/analytics-charts").then((mod) => {
+      setCharts({
+        LineChart: mod.LineChart,
+        Line: mod.Line,
+        BarChart: mod.BarChart,
+        Bar: mod.Bar,
+        PieChart: mod.PieChart,
+        Pie: mod.Pie,
+        Cell: mod.Cell,
+        XAxis: mod.XAxis,
+        YAxis: mod.YAxis,
+        CartesianGrid: mod.CartesianGrid,
+        Tooltip: mod.Tooltip,
+        Legend: mod.Legend,
+        ResponsiveContainer: mod.ResponsiveContainer,
+      })
+    })
+  }, [])
+
+  if (!mounted || !Charts) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">Analytics & Metrics</h1>
+            <p className="text-muted">Track protocol performance and market insights</p>
+          </div>
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-muted">Loading charts...</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const {
+    LineChart,
+    Line,
+    BarChart,
+    Bar,
+    PieChart,
+    Pie,
+    Cell,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+  } = Charts
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -169,7 +212,7 @@ export default function AnalyticsPage() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, value }) => `${name}: ${value}`}
+                        label={({ name, value }: { name: string; value: number }) => `${name}: ${value}`}
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
