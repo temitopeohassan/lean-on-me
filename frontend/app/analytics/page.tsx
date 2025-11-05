@@ -1,6 +1,9 @@
-import dynamic from "next/dynamic"
+// frontend/app/analytics/page.tsx
+"use client";
 
-// Dynamically import the client analytics component to prevent SSR
+import dynamic from "next/dynamic";
+
+// ✅ Dynamically import the client analytics component (browser-only)
 const ClientAnalytics = dynamic(() => import("./client-analytics"), {
   ssr: false,
   loading: () => (
@@ -8,7 +11,9 @@ const ClientAnalytics = dynamic(() => import("./client-analytics"), {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Analytics & Metrics</h1>
-          <p className="text-muted">Track protocol performance and market insights</p>
+          <p className="text-muted">
+            Track protocol performance and market insights
+          </p>
         </div>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-muted">Loading charts...</div>
@@ -16,8 +21,8 @@ const ClientAnalytics = dynamic(() => import("./client-analytics"), {
       </div>
     </div>
   ),
-})
+});
 
 export default function AnalyticsPage() {
-  return <ClientAnalytics />
+  return <ClientAnalytics />;
 }
