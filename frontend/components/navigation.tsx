@@ -4,6 +4,9 @@ import { Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useState } from "react"
+import { useAppKitAccount, useAppKit } from "@reown/appkit/react"
+import { useBalance } from "wagmi"
+import { formatEther } from "viem"
 
 interface NavigationProps {
   isConnected: boolean
@@ -12,6 +15,16 @@ interface NavigationProps {
 
 export default function Navigation({ isConnected, onConnect }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { address } = useAppKitAccount()
+  const { open } = useAppKit()
+  const { data: balance } = useBalance({
+    address: address,
+    enabled: !!address,
+  })
+
+  const handleDisconnect = () => {
+    open({ view: "Account" })
+  }
 
   return (
     <nav className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -38,8 +51,20 @@ export default function Navigation({ isConnected, onConnect }: NavigationProps) 
           </div>
 
           <div className="flex items-center gap-4">
-            {isConnected ? (
-              <span className="text-sm text-primary font-medium">Connected</span>
+            {isConnected && address ? (
+              <div className="flex items-center gap-4">
+                {balance && (
+                  <span className="text-sm text-muted">
+                    {parseFloat(formatEther(balance.value)).toFixed(4)} ETH
+                  </span>
+                )}
+                <span className="text-sm text-primary font-medium">
+                  {address.slice(0, 6)}...{address.slice(-4)}
+                </span>
+                <Button onClick={handleDisconnect} variant="outline" size="sm">
+                  Account
+                </Button>
+              </div>
             ) : (
               <Button onClick={onConnect} className="btn-primary gap-2">
                 <Wallet className="w-4 h-4" />

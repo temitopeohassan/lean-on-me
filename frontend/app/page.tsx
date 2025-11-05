@@ -1,26 +1,17 @@
 "use client"
 
-import { useState } from "react"
-import Navigation from "@/components/navigation"
-import HeroSection from "@/components/hero-section"
-import DashboardPreview from "@/components/dashboard-preview"
-import FeaturesSection from "@/components/features-section"
+import dynamic from "next/dynamic"
+
+// Dynamically import the client component to prevent SSR
+const ClientHome = dynamic(() => import("./client-home"), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-muted">Loading...</div>
+    </div>
+  ),
+})
 
 export default function Home() {
-  const [isConnected, setIsConnected] = useState(false)
-
-  return (
-    <div className="min-h-screen bg-background">
-      <Navigation isConnected={isConnected} onConnect={() => setIsConnected(true)} />
-
-      {!isConnected ? (
-        <>
-          <HeroSection onConnect={() => setIsConnected(true)} />
-          <FeaturesSection />
-        </>
-      ) : (
-        <DashboardPreview />
-      )}
-    </div>
-  )
+  return <ClientHome />
 }
