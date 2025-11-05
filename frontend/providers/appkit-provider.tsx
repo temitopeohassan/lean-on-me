@@ -12,10 +12,11 @@ import { projectId } from "@/lib/config"
 const queryClient = new QueryClient()
 
 let appKitInitialized = false
+let globalWagmiConfig: any = null
 
 export function AppKitProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false)
-  const [wagmiConfig, setWagmiConfig] = useState<any>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
     // Only initialize on client side
@@ -32,7 +33,11 @@ export function AppKitProvider({ children }: { children: React.ReactNode }) {
       // Still continue but AppKit features won't work properly
     }
 
-    if (appKitInitialized) return
+    // Only initialize once
+    if (appKitInitialized && globalWagmiConfig) {
+      setIsInitialized(true)
+      return
+    }
 
     try {
       // Create adapter directly with wagmi parameters
@@ -44,14 +49,11 @@ export function AppKitProvider({ children }: { children: React.ReactNode }) {
         },
       })
 
-      // Retrieve wagmiConfig from adapter
-      const config = adapter.wagmiConfig
-      setWagmiConfig(config)
-
-      // Create AppKit instance
+      // IMPORTANT: Create AppKit instance FIRST before getting config
+      // This initializes the AppKit system before any hooks can be used
       createAppKit({
         adapters: [adapter],
-        projectId: projectId,
+        projectId: projectId || "your-project-id",
         networks: [base],
         metadata: {
           name: "Lean On Me",
@@ -61,19 +63,22 @@ export function AppKitProvider({ children }: { children: React.ReactNode }) {
         },
       })
 
+      // Now retrieve wagmiConfig from adapter
+      globalWagmiConfig = adapter.wagmiConfig
       appKitInitialized = true
+      setIsInitialized(true)
     } catch (error) {
       console.error("Failed to initialize AppKit:", error)
     }
   }, [])
 
   // Don't render children until mounted and AppKit is initialized
-  if (!mounted || !wagmiConfig) {
+  if (!mounted || !isInitialized || !globalWagmiConfig) {
     return null
   }
 
   return (
-    <WagmiProvider config={wagmiConfig}>
+    <WagmiProvider config={globalWagmiConfig}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </WagmiProvider>
   )
