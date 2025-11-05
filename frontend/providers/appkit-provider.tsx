@@ -72,13 +72,25 @@ if (typeof window !== "undefined") {
 export function AppKitProvider({ children }: { children: React.ReactNode }) {
   // Initialize AppKit synchronously during render (client-side only)
   const wagmiConfig = useMemo(() => {
-    if (typeof window === "undefined") return null
-    return initializeAppKit()
+    if (typeof window === "undefined") {
+      // On server, return null but don't try to initialize
+      return null
+    }
+    // On client, initialize immediately
+    const config = initializeAppKit()
+    return config
   }, [])
 
   // Don't render children until AppKit is initialized
-  if (!wagmiConfig || !appKitInitialized) {
-    return null
+  // Since this component is loaded with ssr: false, this should only run on client
+  if (typeof window === "undefined" || !wagmiConfig || !appKitInitialized) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-muted">Initializing...</div>
+        </div>
+      </div>
+    )
   }
 
   return (
