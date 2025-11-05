@@ -1,9 +1,9 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import healthRouter from "./routes/health";
-import reputationRouter from "./routes/reputation";
-import loanRouter from "./routes/loans";
+import healthRouter from "./routes/health.js";
+import reputationRouter from "./routes/reputation.js";
+import loanRouter from "./routes/loans.js";
 
 dotenv.config();
 

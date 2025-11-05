@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
-import { supabase } from "../lib/supabase";
-import { AddressSchema, ReputationUpdateSchema } from "../types/schemas";
+import { supabase } from "../lib/supabase.js";
+import { AddressSchema, ReputationUpdateSchema } from "../types/schemas.js";
 
 const router = Router();
 

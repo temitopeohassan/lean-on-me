@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { supabase } from "../lib/supabase";
-import { FundLoanSchema, LoanRequestSchema, RepayLoanSchema } from "../types/schemas";
+import { supabase } from "../lib/supabase.js";
+import { FundLoanSchema, LoanRequestSchema, RepayLoanSchema } from "../types/schemas.js";
 import { z } from "zod";
 
 const router = Router();
