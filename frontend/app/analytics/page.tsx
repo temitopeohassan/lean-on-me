@@ -3,7 +3,6 @@
 
 import dynamic from "next/dynamic";
 
-// ✅ Dynamically import the client analytics component (browser-only)
 const ClientAnalytics = dynamic(() => import("./client-analytics"), {
   ssr: false,
   loading: () => (
