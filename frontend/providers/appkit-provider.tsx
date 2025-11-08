@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { createAppKit } from "@reown/appkit";
+import { ReactNode } from "react";
+import { createAppKit, AppKitProvider as Provider } from "@reown/appkit";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
@@ -11,7 +11,7 @@ import { projectId } from "@/lib/config";
 
 const queryClient = new QueryClient();
 
-// Create adapter + AppKit ONCE globally
+// Initialize adapter + AppKit once globally
 const adapter = new WagmiAdapter({
   projectId: projectId || "your-project-id",
   networks: [base],
@@ -20,7 +20,7 @@ const adapter = new WagmiAdapter({
   },
 });
 
-createAppKit({
+const appKit = createAppKit({
   adapters: [adapter],
   projectId: projectId || "your-project-id",
   networks: [base],
@@ -34,11 +34,12 @@ createAppKit({
 
 const wagmiConfig = adapter.wagmiConfig;
 
-export function AppKitProvider({ children }: { children: React.ReactNode }) {
-  // No conditional render, no hydration mismatch
+export function AppKitProvider({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <Provider appKit={appKit}>{children}</Provider>
+      </QueryClientProvider>
     </WagmiProvider>
   );
 }
