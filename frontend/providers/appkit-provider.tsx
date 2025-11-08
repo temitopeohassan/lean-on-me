@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { createAppKit, AppKitProvider as Provider } from "@reown/appkit";
+import { createAppKit } from "@reown/appkit";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
@@ -38,7 +38,7 @@ export function AppKitProvider({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <Provider appKit={appKit}>{children}</Provider>
+        <appKit.Provider>{children}</appKit.Provider>
       </QueryClientProvider>
     </WagmiProvider>
   );
