@@ -1,7 +1,7 @@
 // AppKit configuration
 // IMPORTANT: Set NEXT_PUBLIC_REOWN_PROJECT_ID in your Vercel environment variables
 // Get your project ID from https://dashboard.reown.com
-export const projectId: string = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID || "your-project-id"
+export const projectId: string = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID || "e2fe99cf69713953f50feeca193087b3"
 
 // Base network configuration
 export const baseNetwork = {
