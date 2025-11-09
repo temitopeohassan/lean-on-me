@@ -44,6 +44,8 @@ export async function ensureSupabaseSchema(): Promise<void> {
   try {
     const sql = await readFile(SCHEMA_FILE, "utf8");
 
+    console.log("🔄 Applying Supabase schema...");
+
     const client = new Client({
       connectionString,
       ssl:
@@ -75,6 +77,8 @@ export async function ensureSupabaseSchema(): Promise<void> {
     }
     console.error(err.stack ?? err.message);
     // Do not crash the server; continue with startup so routes can still run (may degrade)
+  } finally {
+    console.log("ℹ️  Supabase schema sync attempt complete.");
   }
 }
 
