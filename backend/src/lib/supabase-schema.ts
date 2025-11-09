@@ -64,13 +64,12 @@ export async function ensureSupabaseSchema(): Promise<void> {
     schemaApplied = true;
     console.log("✅ Supabase schema is up to date.");
   } catch (error) {
-    const err = error as NodeJS.ErrnoException;
+    const err = error as NodeJS.ErrnoException & { hostname?: string };
     if (err.code === "ENOENT") {
       console.error(`❌ Supabase schema file not found at ${SCHEMA_FILE}.`);
     } else if (err.code === "ENOTFOUND" || err.code === "ETIMEDOUT") {
-      console.error(
-        `❌ Unable to reach Supabase host (${err.hostname ?? "unknown host"}). The API will start but database may be missing tables.`
-      );
+      const host = err.hostname ?? "unknown host";
+      console.error(`❌ Unable to reach Supabase host (${host}). The API will start but database may be missing tables.`);
     } else {
       console.error("❌ Failed to sync Supabase schema at startup.");
     }
