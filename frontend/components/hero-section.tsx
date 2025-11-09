@@ -20,7 +20,7 @@ export default function HeroSection({ onConnect }: HeroSectionProps) {
               <h1 className="text-5xl sm:text-6xl font-bold text-balance leading-tight">
                 Finance without the middleman
               </h1>
-              <p className="text-xl text-muted leading-relaxed">
+              <p className="text-xl leading-relaxed">
                 Peer-to-peer lending powered by onchain reputation. Borrow or lend with confidence using wallet history
                 and verified income proofs.
               </p>
@@ -64,11 +64,11 @@ export default function HeroSection({ onConnect }: HeroSectionProps) {
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted">Wallet Age</span>
-                  <span className="text-foreground font-medium">3.2 years</span>
+                  <span className="text-foreground text-muted">3.2 years</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted">Transaction Volume</span>
-                  <span className="text-foreground font-medium">$1.2M+</span>
+                  <span className="text-foreground text-muted">$1.2M+</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted">Verified Income</span>

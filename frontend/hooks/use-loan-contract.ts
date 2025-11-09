@@ -1,5 +1,5 @@
 import { useWriteContract, useReadContract, useWaitForTransactionReceipt } from "wagmi"
-import { parseEther, formatEther, type Address } from "viem"
+import { parseEther, type Address } from "viem"
 import { LOAN_CONTRACT_ADDRESS, LOAN_CONTRACT_ABI } from "@/lib/contracts"
 import { api } from "@/lib/api"
 
@@ -9,22 +9,37 @@ export function useCreateLoanRequest() {
     hash,
   })
 
-  const createLoanRequest = async (
-    loanId: string,
-    amount: string, // in ETH
-    durationDays: number,
-    purpose: string,
-    collateralAmount: string // in ETH
-  ) => {
+  const createLoanRequest = async (params: {
+    loanId: string
+    amount: string
+    durationDays: number
+    purpose: string
+    borrower: Address
+  }) => {
+    const { loanId, amount, durationDays, purpose, borrower } = params
     try {
+      if (!borrower) {
+        throw new Error("Borrower wallet address is required")
+      }
+
+      const parsedAmount = Number(amount)
+
+      if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+        throw new Error("Loan amount must be greater than zero")
+      }
+
+      if (!Number.isFinite(durationDays) || durationDays <= 0) {
+        throw new Error("Duration must be greater than zero")
+      }
+
       // First, create the request in the backend
       await api.createLoanRequest({
         loanId,
-        borrower: "", // Will be set from wallet
-        amount: parseFloat(amount),
+        borrower,
+        amount: parsedAmount,
         durationDays,
         purpose,
-        collateralAmount: parseFloat(collateralAmount),
+        collateralAmount: 0,
       })
 
       // Then, create the onchain request
@@ -32,8 +47,8 @@ export function useCreateLoanRequest() {
         address: LOAN_CONTRACT_ADDRESS,
         abi: LOAN_CONTRACT_ABI,
         functionName: "createLoanRequest",
-        args: [loanId, parseEther(amount), BigInt(durationDays), purpose, parseEther(collateralAmount)],
-        value: parseEther(collateralAmount),
+        args: [loanId, parseEther(amount), BigInt(durationDays), purpose, parseEther("0")],
+        value: parseEther("0"),
       })
     } catch (err) {
       console.error("Error creating loan request:", err)

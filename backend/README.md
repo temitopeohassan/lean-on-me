@@ -8,7 +8,8 @@ Routes implement the MCP flows from `mcp/mcp.json` using Supabase.
 cd backend
 npm install
 cp env.example .env
-# edit .env with your Supabase creds
+# edit .env with your Supabase creds (API + Postgres connection)
+npm run supabase:sync   # optional, apply schema to Supabase (requires SUPABASE_DB_URL)
 npm run dev
 ```
 
@@ -17,6 +18,9 @@ npm run dev
 - PORT (default 4000)
 - SUPABASE_URL
 - SUPABASE_SERVICE_ROLE_KEY (preferred) or SUPABASE_ANON_KEY
+- SUPABASE_DB_URL (service-role Postgres connection string used at startup and by `npm run supabase:sync`, include `?sslmode=require` for Supabase)
+
+> On startup the server automatically ensures the Supabase schema (from `supabase/schema.sql`) is applied. Set `SUPABASE_DB_URL` so the backend can connect with the service role credentials.
 
 ## Routes
 

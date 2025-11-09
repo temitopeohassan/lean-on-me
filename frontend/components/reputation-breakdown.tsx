@@ -1,36 +1,39 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { CheckCircle2, AlertCircle } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { CheckCircle2, AlertCircle } from "lucide-react";
+import type { ReputationFactor } from "@/hooks/use-dashboard-summary";
 
-interface ReputationFactor {
-  name: string
-  value: number
-  weight: number
-  verified: boolean
+interface ReputationBreakdownProps {
+  factors?: ReputationFactor[];
+  totalScore?: number;
+  isConnected?: boolean;
 }
 
-const factors: ReputationFactor[] = [
-  { name: "Wallet Age", value: 95, weight: 25, verified: true },
-  { name: "Transaction Volume", value: 88, weight: 20, verified: true },
-  { name: "Repayment History", value: 100, weight: 30, verified: true },
-  { name: "Income Verification", value: 75, weight: 15, verified: true },
-  { name: "Collateral Ratio", value: 92, weight: 10, verified: true },
-]
-
-export default function ReputationBreakdown() {
-  const totalScore = Math.round(factors.reduce((sum, f) => sum + (f.value * f.weight) / 100, 0))
+export default function ReputationBreakdown({ factors = [], totalScore, isConnected = false }: ReputationBreakdownProps) {
+  const calculatedScore =
+    typeof totalScore === "number"
+      ? totalScore
+      : Math.round(factors.reduce((sum, f) => sum + (f.value * f.weight) / 100, 0));
 
   return (
     <Card className="bg-surface border-border">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Reputation Breakdown</span>
-          <span className="text-2xl font-bold text-primary">{totalScore}</span>
+          <span className="text-2xl font-bold text-muted">
+            {Number.isFinite(calculatedScore) ? calculatedScore : "--"}
+          </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {factors.length === 0 && !isConnected && (
+          <p className="text-sm text-muted">Connect your wallet to retrieve detailed reputation insights from the reputation engine.</p>
+        )}
+        {factors.length === 0 && isConnected && (
+          <p className="text-sm text-muted">No reputation factors available yet. Complete more onchain activity to build your profile.</p>
+        )}
         {factors.map((factor) => (
           <div key={factor.name} className="space-y-2">
             <div className="flex items-center justify-between">
@@ -38,7 +41,7 @@ export default function ReputationBreakdown() {
                 <span className="text-sm font-medium">{factor.name}</span>
                 {factor.verified && <CheckCircle2 className="w-4 h-4 text-accent" />}
               </div>
-              <span className="text-sm font-bold text-primary">{factor.value}%</span>
+              <span className="text-sm font-bold text-muted">{factor.value}%</span>
             </div>
             <div className="flex items-center gap-2">
               <Progress value={factor.value} className="flex-1" />
@@ -50,10 +53,10 @@ export default function ReputationBreakdown() {
         <div className="pt-4 border-t border-border">
           <div className="flex items-start gap-2 text-sm text-muted">
             <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <p>Your reputation score is calculated based on verified onchain data and income proofs.</p>
+            <p>Your reputation score is generated from verified onchain activity and submitted income proofs.</p>
           </div>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
