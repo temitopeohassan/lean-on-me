@@ -41,33 +41,60 @@ export async function ensureSupabaseSchema(): Promise<void> {
     return;
   }
 
-  try {
-    const sql = await readFile(SCHEMA_FILE, "utf8");
-
-    console.log("🔄 Applying Supabase schema...");
-
+  const connect = async (connString: string) => {
     const client = new Client({
-      connectionString,
+      connectionString: connString,
       ssl:
-        connectionString.includes("supabase.co") ||
-        connectionString.includes("supabase.net") ||
-        connectionString.includes("supabase.in") ||
-        connectionString.includes("render.com")
+        connString.includes("supabase.co") ||
+        connString.includes("supabase.net") ||
+        connString.includes("supabase.in") ||
+        connString.includes("render.com")
           ? { rejectUnauthorized: false }
           : undefined,
     });
-
     await client.connect();
-    await client.query("BEGIN");
-    await client.query(sql);
-    await client.query("COMMIT");
-    await client.end();
+    return client;
+  };
 
+  const attempt = async (connString: string) => {
+    console.log(`🔄 Applying Supabase schema using ${connString.includes("pooler") ? "pooler" : "direct"} host...`);
+    const sql = await readFile(SCHEMA_FILE, "utf8");
+    const client = await connect(connString);
+    try {
+      await client.query("BEGIN");
+      await client.query(sql);
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  };
+
+  try {
+    await attempt(connectionString);
     schemaApplied = true;
     console.log("✅ Supabase schema is up to date.");
   } catch (error) {
-    const err = error as NodeJS.ErrnoException & { hostname?: string };
-    if (err.code === "ENOENT") {
+    const err = error as NodeJS.ErrnoException & { hostname?: string; address?: string; port?: number };
+    if ((err.code === "ENETUNREACH" || err.code === "ETIMEDOUT") && connectionString.includes("supabase.co")) {
+      console.error(
+        `❌ Failed to reach Supabase direct host ${err.address ?? err.hostname ?? "(unknown)"}:${
+          err.port ?? 5432
+        } [code=${err.code}] – ${err.message}`
+      );
+      if (err.stack) console.error(err.stack);
+      console.warn("⚠️  Retrying schema sync using Supabase connection pool.");
+      const pooler = connectionString
+        .replace("db.", "pooler.")
+        .replace(".supabase.co", ".supabase.net")
+        .replace(":5432", ":6543");
+      await attempt(pooler);
+      schemaApplied = true;
+      console.log("✅ Supabase schema is up to date (via pooler).");
+      return;
+    } else if (err.code === "ENOENT") {
       console.error(`❌ Supabase schema file not found at ${SCHEMA_FILE}.`);
     } else if (err.code === "ENOTFOUND" || err.code === "ETIMEDOUT") {
       const host = err.hostname ?? "unknown host";

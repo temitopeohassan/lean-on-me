@@ -29,28 +29,59 @@ async function main() {
     );
   }
 
-  const client = new Client({
-    connectionString: normalized,
-    ssl:
-      normalized.includes("supabase.co") || normalized.includes("render.com")
-        ? { rejectUnauthorized: false }
-        : undefined,
-  });
+  const connect = async (connString: string) => {
+    const client = new Client({
+      connectionString: connString,
+      ssl:
+        connString.includes("supabase.co") ||
+        connString.includes("supabase.net") ||
+        connString.includes("supabase.in") ||
+        connString.includes("render.com")
+          ? { rejectUnauthorized: false }
+          : undefined,
+    });
+    await client.connect();
+    return client;
+  };
 
-  console.log("🔄 Syncing Supabase schema...");
+  const attempt = async (connString: string) => {
+    console.log(`🔄 Syncing Supabase schema using ${connString.includes("pooler") ? "pooler" : "direct"} host...`);
+    const client = await connect(connString);
+    try {
+      await client.query("BEGIN");
+      await client.query(sql);
+      await client.query("COMMIT");
+      console.log("✅ Supabase schema synced successfully.");
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  };
 
   try {
-    await client.connect();
-    await client.query("BEGIN");
-    await client.query(sql);
-    await client.query("COMMIT");
-    console.log("✅ Supabase schema synced successfully.");
+    await attempt(normalized);
   } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
-    console.error("❌ Failed to sync Supabase schema.");
-    throw error;
-  } finally {
-    await client.end();
+    const err = error as NodeJS.ErrnoException & { address?: string; port?: number };
+    if ((err.code === "ENETUNREACH" || err.code === "ETIMEDOUT") && normalized.includes("supabase.co")) {
+      console.error(
+        `❌ Failed to reach Supabase direct host ${err.address ?? "(unknown)"}:${
+          err.port ?? 5432
+        } [code=${err.code}] – ${err.message}`
+      );
+      if (err.stack) console.error(err.stack);
+      console.warn("⚠️  Retrying schema sync using Supabase connection pool...");
+      const pooler = normalized
+        .replace("db.", "pooler.")
+        .replace(".supabase.co", ".supabase.net")
+        .replace(":5432", ":6543");
+      await attempt(pooler);
+    } else {
+      console.error("❌ Failed to sync Supabase schema.");
+      if (err.stack) console.error(err.stack);
+      throw error;
+    }
   }
 }
 
