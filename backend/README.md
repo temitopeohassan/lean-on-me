@@ -19,6 +19,7 @@ npm run dev
 - SUPABASE_URL
 - SUPABASE_SERVICE_ROLE_KEY (preferred) or SUPABASE_ANON_KEY
 - SUPABASE_DB_URL (service-role Postgres connection string used at startup and by `npm run supabase:sync`, include `?sslmode=require` for Supabase)
+- SUPABASE_POOLER_DB_URL (optional – Supabase connection pooling URL; required if direct host is unreachable)
 
 > `npm run build` triggers `npm run supabase:sync` automatically before compiling, ensuring the Supabase schema stays up to date during deployments.
 

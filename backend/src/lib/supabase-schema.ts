@@ -56,8 +56,8 @@ export async function ensureSupabaseSchema(): Promise<void> {
     return client;
   };
 
-  const attempt = async (connString: string) => {
-    console.log(`🔄 Applying Supabase schema using ${connString.includes("pooler") ? "pooler" : "direct"} host...`);
+  const attempt = async (connString: string, label: string) => {
+    console.log(`🔄 Applying Supabase schema using ${label} host...`);
     const sql = await readFile(SCHEMA_FILE, "utf8");
     const client = await connect(connString);
     try {
@@ -73,7 +73,7 @@ export async function ensureSupabaseSchema(): Promise<void> {
   };
 
   try {
-    await attempt(connectionString);
+    await attempt(connectionString, "direct");
     schemaApplied = true;
     console.log("✅ Supabase schema is up to date.");
   } catch (error) {
@@ -85,12 +85,17 @@ export async function ensureSupabaseSchema(): Promise<void> {
         } [code=${err.code}] – ${err.message}`
       );
       if (err.stack) console.error(err.stack);
-      console.warn("⚠️  Retrying schema sync using Supabase connection pool.");
-      const pooler = connectionString
-        .replace("db.", "pooler.")
-        .replace(".supabase.co", ".supabase.net")
-        .replace(":5432", ":6543");
-      await attempt(pooler);
+      const pooler =
+        process.env.SUPABASE_POOLER_DB_URL ||
+        process.env.SUPABASE_POOLER_CONNECTION_STRING ||
+        process.env.SUPABASE_POOLER_URL;
+      if (!pooler) {
+        console.error(
+          "❌ SUPABASE_POOLER_DB_URL not set. Provide the Supabase connection pooling URL to enable automatic fallback."
+        );
+        throw error;
+      }
+      await attempt(pooler, "pooler");
       schemaApplied = true;
       console.log("✅ Supabase schema is up to date (via pooler).");
       return;
