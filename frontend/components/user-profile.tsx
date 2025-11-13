@@ -15,10 +15,10 @@ interface UserProfileProps {
 }
 
 const tierColors: Record<string, string> = {
-  S: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  A: "bg-primary/20 text-primary border-primary/30",
-  B: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  C: "bg-muted/20 text-muted border-muted/30",
+      S: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+      A: "bg-primary/20 text-primary border-primary/30",
+      B: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+      C: "bg-muted/20 text-muted border-muted/30",
   D: "bg-muted/20 text-muted border-muted/30",
 };
 
@@ -60,8 +60,8 @@ export default function UserProfile({ address, reputationScore, tier, status }: 
                     onClick={handleCopy}
                     aria-label="Copy address"
                   >
-                    <Copy className="w-4 h-4" />
-                  </button>
+                  <Copy className="w-4 h-4" />
+                </button>
                 )}
                 {copied && <span className="text-xs text-accent">Copied!</span>}
               </div>
@@ -76,8 +76,8 @@ export default function UserProfile({ address, reputationScore, tier, status }: 
             </Button>
           ) : (
             <Button variant="ghost" size="sm" className="text-muted" disabled>
-              <ExternalLink className="w-4 h-4" />
-            </Button>
+            <ExternalLink className="w-4 h-4" />
+          </Button>
           )}
         </div>
 

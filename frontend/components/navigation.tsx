@@ -6,21 +6,42 @@ import Link from "next/link"
 import { useState } from "react"
 import { useAppKitAccount, useAppKit } from "@reown/appkit/react"
 import { useBalance } from "wagmi"
-import { formatEther } from "viem"
+import { formatEther, type Address, getAddress } from "viem"
 
 interface NavigationProps {
   isConnected: boolean
-  onConnect: () => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onConnect?: () => void
 }
 
 export default function Navigation({ isConnected, onConnect }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { address } = useAppKitAccount()
   const { open } = useAppKit()
+  
+  // Normalize address format for useBalance (getAddress validates and normalizes to Address type)
+  const validAddress: Address | undefined = (() => {
+    if (!address) return undefined
+    try {
+      // getAddress returns Address type, but TypeScript needs explicit assertion
+      return getAddress(address) as Address
+    } catch {
+      return undefined
+    }
+  })()
+  
   const { data: balance } = useBalance({
-    address: address,
-    enabled: !!address,
+    address: validAddress,
+    enabled: !!validAddress,
   })
+
+  const handleConnect = () => {
+    if (onConnect) {
+      onConnect()
+    } else {
+      open()
+    }
+  }
 
   const handleDisconnect = () => {
     open({ view: "Account" })
@@ -37,13 +58,13 @@ export default function Navigation({ isConnected, onConnect }: NavigationProps) 
           <div className="hidden md:flex items-center gap-8">
             {isConnected && (
               <>
-                <Link href="/borrow" className="text-sm text-muted hover:text-foreground transition-colors">
+                <Link href="/borrow" className="text-sm text-primary">
                   Borrow
                 </Link>
-                <Link href="/browse" className="text-sm text-muted hover:text-foreground transition-colors">
+                <Link href="/browse" className="text-sm text-primary">
                   Browse
                 </Link>
-                <Link href="/dashboard" className="text-sm text-muted hover:text-foreground transition-colors">
+                <Link href="/dashboard" className="text-sm text-primary">
                   Dashboard
                 </Link>
               </>
@@ -66,7 +87,7 @@ export default function Navigation({ isConnected, onConnect }: NavigationProps) 
                 </Button>
               </div>
             ) : (
-              <Button onClick={onConnect} className="btn-primary gap-2">
+              <Button onClick={handleConnect} className="btn-primary gap-2">
                 <Wallet className="w-4 h-4" />
                 Connect Wallet
               </Button>
