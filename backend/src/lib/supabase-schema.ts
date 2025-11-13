@@ -23,7 +23,8 @@ export async function ensureSupabaseSchema(): Promise<void> {
   if (schemaApplied) return;
 
   if (process.env.SUPABASE_SKIP_SCHEMA_SYNC === "true") {
-    console.warn("⚠️  Skipping Supabase schema sync due to SUPABASE_SKIP_SCHEMA_SYNC=true.");
+    console.log("ℹ️  Skipping Supabase schema sync due to SUPABASE_SKIP_SCHEMA_SYNC=true.");
+    console.log("ℹ️  Ensure schema is loaded manually via Supabase SQL Editor if needed.");
     return;
   }
 
@@ -51,6 +52,7 @@ export async function ensureSupabaseSchema(): Promise<void> {
         connString.includes("render.com")
           ? { rejectUnauthorized: false }
           : undefined,
+      connectionTimeoutMillis: 10000,
     });
     await client.connect();
     return client;
@@ -77,38 +79,51 @@ export async function ensureSupabaseSchema(): Promise<void> {
     schemaApplied = true;
     console.log("✅ Supabase schema is up to date.");
   } catch (error) {
-    const err = error as NodeJS.ErrnoException & { hostname?: string; address?: string; port?: number };
-    if ((err.code === "ENETUNREACH" || err.code === "ETIMEDOUT") && connectionString.includes("supabase.co")) {
+    const err = error as NodeJS.ErrnoException & { hostname?: string; address?: string; port?: number; code?: string };
+    if ((err.code === "ENETUNREACH" || err.code === "ETIMEDOUT" || err.code === "ENOTFOUND") && connectionString.includes("supabase.co")) {
       console.error(
         `❌ Failed to reach Supabase direct host ${err.address ?? err.hostname ?? "(unknown)"}:${
           err.port ?? 5432
         } [code=${err.code}] – ${err.message}`
       );
       if (err.stack) console.error(err.stack);
-      const pooler =
+      const pooler = normalizeConnectionString(
         process.env.SUPABASE_POOLER_DB_URL ||
         process.env.SUPABASE_POOLER_CONNECTION_STRING ||
-        process.env.SUPABASE_POOLER_URL;
+        process.env.SUPABASE_POOLER_URL
+      );
       if (!pooler) {
         console.error(
           "❌ SUPABASE_POOLER_DB_URL not set. Provide the Supabase connection pooling URL to enable automatic fallback."
         );
-        throw error;
+        // Do not crash the server; continue with startup so routes can still run (may degrade)
+        console.log("ℹ️  Server will continue. If schema was loaded manually, this is expected.");
+        return;
       }
-      await attempt(pooler, "pooler");
-      schemaApplied = true;
-      console.log("✅ Supabase schema is up to date (via pooler).");
-      return;
+      try {
+        await attempt(pooler, "pooler");
+        schemaApplied = true;
+        console.log("✅ Supabase schema is up to date (via pooler).");
+        return;
+      } catch (poolerError) {
+        const poolerErr = poolerError as NodeJS.ErrnoException & { hostname?: string; address?: string; port?: number };
+        console.error(
+          `❌ Failed to reach Supabase pooler host ${poolerErr.address ?? poolerErr.hostname ?? "(unknown)"}:${
+            poolerErr.port ?? 6543
+          } [code=${poolerErr.code}] – ${poolerErr.message}`
+        );
+        // Do not crash the server; continue with startup so routes can still run (may degrade)
+        console.log("ℹ️  Server will continue. If schema was loaded manually, this is expected.");
+        return;
+      }
     } else if (err.code === "ENOENT") {
       console.error(`❌ Supabase schema file not found at ${SCHEMA_FILE}.`);
-    } else if (err.code === "ENOTFOUND" || err.code === "ETIMEDOUT") {
-      const host = err.hostname ?? "unknown host";
-      console.error(`❌ Unable to reach Supabase host (${host}). The API will start but database may be missing tables.`);
     } else {
       console.error("❌ Failed to sync Supabase schema at startup.");
+      console.error(err.stack ?? err.message);
     }
-    console.error(err.stack ?? err.message);
     // Do not crash the server; continue with startup so routes can still run (may degrade)
+    console.log("ℹ️  Server will continue. If schema was loaded manually, this is expected.");
   } finally {
     console.log("ℹ️  Supabase schema sync attempt complete.");
   }

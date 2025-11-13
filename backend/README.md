@@ -9,9 +9,24 @@ cd backend
 npm install
 cp env.example .env
 # edit .env with your Supabase creds (API + Postgres connection)
-npm run supabase:sync   # optional, apply schema to Supabase (requires SUPABASE_DB_URL)
+npm run load-schema     # Load schema into Supabase (standalone script with detailed error messages)
 npm run dev
 ```
+
+### Loading Schema into Supabase
+
+The schema can be loaded in two ways:
+
+1. **Standalone script (recommended for troubleshooting):**
+   ```bash
+   npm run load-schema
+   ```
+   This script provides detailed error messages, connection testing, and automatically falls back to the pooler URL if the direct connection fails.
+
+2. **Automatic sync (during build/startup):**
+   - The schema is automatically synced when you run `npm run build` (via `prebuild` hook)
+   - The schema is also synced when the server starts (via `ensureSupabaseSchema()` in `server.ts`)
+   - Manual sync: `npm run supabase:sync`
 
 ## Environment
 

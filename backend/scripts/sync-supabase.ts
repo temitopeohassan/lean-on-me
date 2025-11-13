@@ -1,15 +1,29 @@
 #!/usr/bin/env tsx
+/**
+ * Schema sync script (used during build/startup)
+ * For standalone schema loading, use: npm run load-schema
+ */
 import "dotenv/config";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { Client } from "pg";
 
+function normalizeConnectionString(raw: string | undefined): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!/^postgres(ql)?:\/\//i.test(trimmed)) {
+    return null;
+  }
+  return trimmed;
+}
+
 async function main() {
-  const connectionString =
+  const connectionString = normalizeConnectionString(
     process.env.SUPABASE_DB_URL ||
     process.env.SUPABASE_CONNECTION_STRING ||
-    process.env.DATABASE_URL;
+    process.env.DATABASE_URL
+  );
 
   if (!connectionString) {
     throw new Error(
@@ -21,14 +35,6 @@ async function main() {
   const schemaPath = resolve(currentDir, "..", "supabase", "schema.sql");
   const sql = await readFile(schemaPath, "utf8");
 
-  const normalized = connectionString.trim();
-
-  if (!/^postgres(ql)?:\/\//i.test(normalized)) {
-    throw new Error(
-      'Invalid Supabase connection string. Expected it to start with "postgresql://" or "postgres://". Check SUPABASE_DB_URL in backend/.env.'
-    );
-  }
-
   const connect = async (connString: string) => {
     const client = new Client({
       connectionString: connString,
@@ -39,6 +45,7 @@ async function main() {
         connString.includes("render.com")
           ? { rejectUnauthorized: false }
           : undefined,
+      connectionTimeoutMillis: 10000,
     });
     await client.connect();
     return client;
@@ -61,20 +68,21 @@ async function main() {
   };
 
   try {
-    await attempt(normalized, "direct");
+    await attempt(connectionString, "direct");
   } catch (error) {
-    const err = error as NodeJS.ErrnoException & { address?: string; port?: number };
-    if ((err.code === "ENETUNREACH" || err.code === "ETIMEDOUT") && normalized.includes("supabase.co")) {
+    const err = error as NodeJS.ErrnoException & { address?: string; port?: number; code?: string };
+    if ((err.code === "ENETUNREACH" || err.code === "ETIMEDOUT" || err.code === "ENOTFOUND") && connectionString.includes("supabase.co")) {
       console.error(
         `❌ Failed to reach Supabase direct host ${err.address ?? "(unknown)"}:${
           err.port ?? 5432
         } [code=${err.code}] – ${err.message}`
       );
       if (err.stack) console.error(err.stack);
-      const pooler =
+      const pooler = normalizeConnectionString(
         process.env.SUPABASE_POOLER_DB_URL ||
         process.env.SUPABASE_POOLER_CONNECTION_STRING ||
-        process.env.SUPABASE_POOLER_URL;
+        process.env.SUPABASE_POOLER_URL
+      );
       if (!pooler) {
         throw new Error(
           "SUPABASE_POOLER_DB_URL not set. Provide the Supabase connection pooling URL to enable automatic fallback."
